@@ -1,51 +1,106 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Navbar from '@/components/Navbar'
+import { supabase } from '@/lib/supabase'
 import styles from './dashboard.module.css'
 
 type Week = { label: string; content: string; resources: string[] }
 type Plan = { title: string; meta: string; overview: string; weeks: Week[]; milestone: string }
+type Course = { id: string; title: string; meta: string; plan: Plan; created_at: string }
 
 export default function Dashboard() {
+  const router = useRouter()
+  const [user, setUser] = useState<{ email: string; name: string } | null>(null)
+  const [courses, setCourses] = useState<Course[]>([])
   const [showForm, setShowForm] = useState(false)
   const [topic, setTopic] = useState('')
   const [time, setTime] = useState('')
   const [goal, setGoal] = useState('')
   const [loading, setLoading] = useState(false)
-  const [plan, setPlan] = useState<Plan | null>(null)
+  const [activePlan, setActivePlan] = useState<Plan | null>(null)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    async function init() {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) { router.push('/login'); return }
+      const name = session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'there'
+      setUser({ email: session.user.email!, name })
+      loadCourses(session.user.id)
+    }
+    init()
+  }, [router])
+
+  async function loadCourses(userId: string) {
+    const { data } = await supabase
+      .from('courses')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+    if (data) setCourses(data)
+  }
+
+  async function handleSignOut() {
+    await supabase.auth.signOut()
+    router.push('/')
+  }
 
   async function generatePlan() {
     if (!topic || !time || !goal) { setError('Please fill in all three fields.'); return }
-    setError(''); setLoading(true); setPlan(null)
+    setError(''); setLoading(true); setActivePlan(null)
+
     try {
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ topic, time, goal }),
       })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Generation failed')
-      setPlan(data)
+      const plan = await res.json()
+      if (!res.ok) throw new Error(plan.error || 'Generation failed')
+
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        const { data } = await supabase.from('courses').insert({
+          user_id: session.user.id,
+          title: plan.title,
+          meta: plan.meta,
+          plan,
+        }).select().single()
+        if (data) setCourses(prev => [data, ...prev])
+      }
+
+      setActivePlan(plan)
       setShowForm(false)
+      setTopic(''); setTime(''); setGoal('')
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Something went wrong. Please try again.')
+      setError(e instanceof Error ? e.message : 'Something went wrong.')
     } finally {
       setLoading(false)
     }
   }
+
+  if (!user) return <div className={styles.loading}>Loading...</div>
 
   return (
     <>
       <Navbar />
       <main className={styles.main}>
         <div className={styles.header}>
-          <h1>Welcome back</h1>
-          <p>You&apos;re on a 5-day streak. Keep it up!</p>
+          <div>
+            <h1>Welcome back, {user.name.split(' ')[0]} 👋</h1>
+            <p>Ready to learn something new today?</p>
+          </div>
+          <button className={styles.signOutBtn} onClick={handleSignOut}>Sign out</button>
         </div>
 
         <div className={styles.stats}>
-          {[['5', 'Day streak'], ['340', 'Total XP'], ['Lv. 4', 'Level'], ['1', 'Active courses']].map(([val, label]) => (
+          {[
+            ['0', 'Day streak'],
+            ['0', 'Total XP'],
+            ['Lv. 1', 'Level'],
+            [String(courses.length), 'Courses'],
+          ].map(([val, label]) => (
             <div key={label} className={styles.stat}>
               <div className={styles.statVal}>{val}</div>
               <div className={styles.statLabel}>{label}</div>
@@ -55,29 +110,36 @@ export default function Dashboard() {
 
         <p className={styles.sectionTitle}>Your courses</p>
 
-        {!showForm && !plan && (
-          <div className={styles.courseCard}>
-            <div className={styles.courseIcon}>💻</div>
-            <div className={styles.courseInfo}>
-              <div className={styles.courseTitle}>Python for Data Analysis</div>
-              <div className={styles.courseMeta}>Week 3 of 8 · 1 hr/day</div>
-              <div className={styles.progressBar}><div className={styles.progressFill} style={{ width: '35%' }} /></div>
-            </div>
-            <div className={styles.streak}>🔥 5d</div>
+        {courses.length === 0 && !showForm && !activePlan && (
+          <div className={styles.empty}>
+            <p>No courses yet. Create your first one below!</p>
           </div>
         )}
 
-        {plan && (
+        {courses.map(course => (
+          <div key={course.id} className={styles.courseCard} onClick={() => setActivePlan(course.plan)}>
+            <div className={styles.courseIcon}>📚</div>
+            <div className={styles.courseInfo}>
+              <div className={styles.courseTitle}>{course.title}</div>
+              <div className={styles.courseMeta}>{course.meta}</div>
+              <div className={styles.progressBar}><div className={styles.progressFill} style={{ width: '5%' }} /></div>
+            </div>
+            <div className={styles.streak}>View →</div>
+          </div>
+        ))}
+
+        {activePlan && (
           <div className={styles.planCard}>
             <div className={styles.planHeader}>
               <div className={styles.planIcon}>📚</div>
               <div>
-                <div className={styles.planTitle}>{plan.title}</div>
-                <div className={styles.planMeta}>{plan.meta}</div>
+                <div className={styles.planTitle}>{activePlan.title}</div>
+                <div className={styles.planMeta}>{activePlan.meta}</div>
               </div>
+              <button className={styles.closeBtn} onClick={() => setActivePlan(null)}>✕</button>
             </div>
-            {plan.overview && <p className={styles.planOverview}>{plan.overview}</p>}
-            {plan.weeks?.map((week, i) => (
+            {activePlan.overview && <p className={styles.planOverview}>{activePlan.overview}</p>}
+            {activePlan.weeks?.map((week, i) => (
               <div key={i} className={styles.weekBlock}>
                 <div className={styles.weekLabel}>{week.label}</div>
                 <p className={styles.weekContent}>{week.content}</p>
@@ -88,10 +150,10 @@ export default function Dashboard() {
                 )}
               </div>
             ))}
-            {plan.milestone && (
+            {activePlan.milestone && (
               <div className={styles.milestone}>
                 <div className={styles.milestoneLabel}>Your milestone</div>
-                <p>{plan.milestone}</p>
+                <p>{activePlan.milestone}</p>
               </div>
             )}
           </div>
@@ -100,18 +162,13 @@ export default function Dashboard() {
         {showForm ? (
           <div className={styles.formCard}>
             <div className={styles.formTitle}>New learning plan</div>
-
             <label className={styles.fieldLabel}>What do you want to learn?</label>
-            <textarea className={styles.textarea} rows={3} placeholder="e.g. I want to learn Python for data analysis, focusing on pandas, matplotlib, and building dashboards..." value={topic} onChange={e => setTopic(e.target.value)} />
-
+            <textarea className={styles.textarea} rows={3} placeholder="e.g. I want to learn Python for data analysis..." value={topic} onChange={e => setTopic(e.target.value)} />
             <label className={styles.fieldLabel}>Your time &amp; schedule</label>
-            <textarea className={styles.textarea} rows={2} placeholder="e.g. I have 8 weeks, 1 hour each weekday evening and 3 hours on weekends..." value={time} onChange={e => setTime(e.target.value)} />
-
+            <textarea className={styles.textarea} rows={2} placeholder="e.g. I have 8 weeks, 1 hour each weekday evening..." value={time} onChange={e => setTime(e.target.value)} />
             <label className={styles.fieldLabel}>Your goal &amp; motivation</label>
-            <textarea className={styles.textarea} rows={2} placeholder="e.g. I want to transition into a data analyst role within 6 months..." value={goal} onChange={e => setGoal(e.target.value)} />
-
+            <textarea className={styles.textarea} rows={2} placeholder="e.g. I want to get a data analyst job in 6 months..." value={goal} onChange={e => setGoal(e.target.value)} />
             {error && <p className={styles.error}>{error}</p>}
-
             <div className={styles.formBtns}>
               <button className={styles.cancelBtn} onClick={() => setShowForm(false)}>Cancel</button>
               <button className={styles.generateBtn} onClick={generatePlan} disabled={loading}>
