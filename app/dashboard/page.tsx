@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import { supabase } from '@/lib/supabase'
 import styles from './dashboard.module.css'
@@ -8,13 +9,13 @@ import styles from './dashboard.module.css'
 type Week = { label: string; content: string; resources: string[] }
 type Plan = { title: string; meta: string; overview: string; weeks: Week[]; milestone: string }
 type Course = { id: string; title: string; meta: string; plan: Plan; created_at: string }
-type Stats = { xp: number; level: number; streak: number }
+type Profile = { full_name: string; username: string; avatar_url: string; streak: number; xp: number; level: number; is_public: boolean }
 
 export default function Dashboard() {
   const router = useRouter()
-  const [user, setUser] = useState<{ email: string; name: string } | null>(null)
+  const [user, setUser] = useState<{ email: string; id: string } | null>(null)
+  const [profile, setProfile] = useState<Profile | null>(null)
   const [courses, setCourses] = useState<Course[]>([])
-  const [stats, setStats] = useState<Stats>({ xp: 0, level: 1, streak: 0 })
   const [showForm, setShowForm] = useState(false)
   const [topic, setTopic] = useState('')
   const [time, setTime] = useState('')
@@ -27,10 +28,16 @@ export default function Dashboard() {
     async function init() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { router.push('/login'); return }
-      const name = session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'there'
-      setUser({ email: session.user.email!, name })
+      setUser({ email: session.user.email!, id: session.user.id })
+
+      const { data: prof } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .single()
+      if (prof) setProfile(prof)
+
       loadCourses(session.user.id)
-      updateStats(session.user.id)
     }
     init()
   }, [router])
@@ -44,75 +51,6 @@ export default function Dashboard() {
     if (data) setCourses(data)
   }
 
-  async function updateStats(userId: string) {
-    const today = new Date().toISOString().split('T')[0]
-
-    const { data: existing } = await supabase
-      .from('user_stats')
-      .select('*')
-      .eq('user_id', userId)
-      .single()
-
-    if (!existing) {
-      // First time — create stats row
-      const { data } = await supabase.from('user_stats').insert({
-        user_id: userId,
-        xp: 0,
-        level: 1,
-        streak: 1,
-        last_active: today,
-      }).select().single()
-      if (data) setStats({ xp: data.xp, level: data.level, streak: data.streak })
-      return
-    }
-
-    const lastActive = existing.last_active
-    let newStreak = existing.streak
-
-    if (lastActive === today) {
-      // Already visited today, no change
-      setStats({ xp: existing.xp, level: existing.level, streak: existing.streak })
-      return
-    }
-
-    const yesterday = new Date()
-    yesterday.setDate(yesterday.getDate() - 1)
-    const yesterdayStr = yesterday.toISOString().split('T')[0]
-
-    if (lastActive === yesterdayStr) {
-      newStreak = existing.streak + 1 // Consecutive day
-    } else {
-      newStreak = 1 // Missed a day, reset
-    }
-
-    const { data } = await supabase.from('user_stats').update({
-      streak: newStreak,
-      last_active: today,
-    }).eq('user_id', userId).select().single()
-
-    if (data) setStats({ xp: data.xp, level: data.level, streak: data.streak })
-  }
-
-  async function addXP(userId: string, amount: number) {
-    const { data: existing } = await supabase
-      .from('user_stats')
-      .select('*')
-      .eq('user_id', userId)
-      .single()
-
-    if (!existing) return
-
-    const newXP = existing.xp + amount
-    const newLevel = Math.floor(newXP / 500) + 1
-
-    const { data } = await supabase.from('user_stats').update({
-      xp: newXP,
-      level: newLevel,
-    }).eq('user_id', userId).select().single()
-
-    if (data) setStats({ xp: data.xp, level: data.level, streak: data.streak })
-  }
-
   async function handleSignOut() {
     await supabase.auth.signOut()
     router.push('/')
@@ -121,7 +59,6 @@ export default function Dashboard() {
   async function generatePlan() {
     if (!topic || !time || !goal) { setError('Please fill in all three fields.'); return }
     setError(''); setLoading(true); setActivePlan(null)
-
     try {
       const res = await fetch('/api/generate', {
         method: 'POST',
@@ -140,7 +77,6 @@ export default function Dashboard() {
           plan,
         }).select().single()
         if (data) setCourses(prev => [data, ...prev])
-        await addXP(session.user.id, 100)
       }
 
       setActivePlan(plan)
@@ -153,6 +89,11 @@ export default function Dashboard() {
     }
   }
 
+  const displayName = profile?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'there'
+  const initials = profile?.full_name
+    ? profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+    : displayName.slice(0, 2).toUpperCase()
+
   if (!user) return <div className={styles.loading}>Loading...</div>
 
   return (
@@ -160,18 +101,33 @@ export default function Dashboard() {
       <Navbar />
       <main className={styles.main}>
         <div className={styles.header}>
-          <div>
-            <h1>Welcome back, {user.name.split(' ')[0]} 👋</h1>
-            <p>Ready to learn something new today?</p>
+          <div className={styles.headerLeft}>
+            <div className={styles.headerAvatar}>
+              {profile?.avatar_url ? (
+                <img src={profile.avatar_url} alt={displayName} className={styles.headerAvatarImg} />
+              ) : (
+                <div className={styles.headerAvatarPlaceholder}>{initials}</div>
+              )}
+            </div>
+            <div>
+              <h1>Welcome back, {displayName} 👋</h1>
+              <p>Ready to learn something new today?</p>
+            </div>
           </div>
-          <button className={styles.signOutBtn} onClick={handleSignOut}>Sign out</button>
+          <div className={styles.headerActions}>
+            <Link href="/profile/edit" className={styles.editProfileBtn}>Edit profile</Link>
+            {profile?.username && (
+              <Link href={`/profile/${profile.username}`} className={styles.viewProfileBtn}>View profile</Link>
+            )}
+            <button className={styles.signOutBtn} onClick={handleSignOut}>Sign out</button>
+          </div>
         </div>
 
         <div className={styles.stats}>
           {[
-            [`${stats.streak}`, 'Day streak'],
-            [`${stats.xp}`, 'Total XP'],
-            [`Lv. ${stats.level}`, 'Level'],
+            ['🔥 ' + (profile?.streak || 0), 'Day streak'],
+            [String(profile?.xp || 0), 'Total XP'],
+            ['Lv. ' + (profile?.level || 1), 'Level'],
             [String(courses.length), 'Courses'],
           ].map(([val, label]) => (
             <div key={label} className={styles.stat}>
@@ -184,9 +140,7 @@ export default function Dashboard() {
         <p className={styles.sectionTitle}>Your courses</p>
 
         {courses.length === 0 && !showForm && !activePlan && (
-          <div className={styles.empty}>
-            <p>No courses yet. Create your first one below!</p>
-          </div>
+          <div className={styles.empty}>No courses yet. Create your first one below!</div>
         )}
 
         {courses.map(course => (
@@ -250,9 +204,7 @@ export default function Dashboard() {
             </div>
           </div>
         ) : (
-          <button className={styles.newBtn} onClick={() => setShowForm(true)}>
-            + New learning plan
-          </button>
+          <button className={styles.newBtn} onClick={() => setShowForm(true)}>+ New learning plan</button>
         )}
       </main>
     </>
