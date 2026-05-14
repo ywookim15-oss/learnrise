@@ -78,9 +78,12 @@
   text-decoration: none;
   margin-bottom: 1rem;
   transition: background 0.15s;
+  border: none;
+  cursor: pointer;
 }
 
-.btn:hover { background: var(--blue-dark); }
+.btn:hover:not(:disabled) { background: var(--blue-dark); }
+.btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .divider {
   text-align: center;
@@ -121,6 +124,7 @@
   color: var(--text);
   margin-bottom: 1.25rem;
   transition: background 0.15s;
+  cursor: pointer;
 }
 
 .google:hover { background: var(--surface); }
@@ -135,4 +139,26 @@
   color: var(--blue);
   font-weight: 500;
   text-decoration: none;
+}
+
+.error {
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  font-size: 13px;
+  color: #DC2626;
+  margin-bottom: 1rem;
+  font-weight: 300;
+}
+
+.successMsg {
+  background: #F0FDF4;
+  border: 1px solid #BBF7D0;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  font-size: 13px;
+  color: #16A34A;
+  margin-bottom: 1rem;
+  font-weight: 300;
 }
