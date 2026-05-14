@@ -1,0 +1,153 @@
+.main {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.header { margin-bottom: 3rem; }
+
+.label {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--blue);
+  font-weight: 500;
+  margin-bottom: 0.75rem;
+}
+
+.header h1 {
+  font-family: 'Lora', serif;
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.75rem;
+  color: var(--text);
+}
+
+.header p {
+  font-size: 15px;
+  color: var(--muted);
+  font-weight: 300;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.planCard {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.75rem;
+  text-align: left;
+}
+
+.planCard.featured {
+  border: 2px solid var(--blue);
+  background: var(--blue-light);
+}
+
+.badge {
+  display: inline-block;
+  background: var(--blue);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  padding: 3px 10px;
+  border-radius: 20px;
+  margin-bottom: 1rem;
+}
+
+.planName {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+
+.planPrice {
+  font-family: 'Lora', serif;
+  font-size: 2.25rem;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 0.25rem;
+}
+
+.planPrice span {
+  font-size: 14px;
+  font-family: 'Sora', sans-serif;
+  font-weight: 300;
+  color: var(--muted);
+}
+
+.planDesc {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 1.25rem;
+  line-height: 1.5;
+  font-weight: 300;
+}
+
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin-bottom: 1.25rem;
+}
+
+.planFeatures {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-bottom: 1.5rem;
+}
+
+.planFeatures li {
+  font-size: 13px;
+  color: var(--text);
+  font-weight: 300;
+}
+
+.btnFree {
+  display: block;
+  width: 100%;
+  padding: 11px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: center;
+  text-decoration: none;
+  background: var(--surface);
+  color: var(--blue);
+  border: 1.5px solid var(--blue-mid);
+  transition: background 0.15s;
+}
+
+.btnFree:hover { background: var(--blue-light); }
+
+.btnPro {
+  display: block;
+  width: 100%;
+  padding: 11px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: center;
+  text-decoration: none;
+  background: var(--blue);
+  color: #fff;
+  transition: background 0.15s;
+}
+
+.btnPro:hover { background: var(--blue-dark); }
+
+.note {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 300;
+}

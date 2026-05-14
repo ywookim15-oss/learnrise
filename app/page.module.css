@@ -1,0 +1,262 @@
+.hero {
+  text-align: center;
+  padding: 5rem 2rem 4rem;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--blue-light);
+  border: 1px solid var(--blue-mid);
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--blue);
+  margin-bottom: 1.75rem;
+  letter-spacing: 0.04em;
+}
+
+.hero h1 {
+  font-family: 'Lora', serif;
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  margin-bottom: 1.25rem;
+  color: var(--text);
+}
+
+.hero h1 em {
+  font-style: italic;
+  color: var(--blue);
+}
+
+.hero p {
+  font-size: 15px;
+  color: var(--muted);
+  line-height: 1.7;
+  max-width: 480px;
+  margin: 0 auto 2.25rem;
+  font-weight: 300;
+}
+
+.heroBtns {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btnPrimary {
+  background: var(--blue);
+  color: #fff;
+  border-radius: 9px;
+  padding: 12px 26px;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+
+.btnPrimary:hover { background: var(--blue-dark); }
+
+.btnOutline {
+  background: #fff;
+  color: var(--blue);
+  border: 1.5px solid var(--blue-mid);
+  border-radius: 9px;
+  padding: 11px 26px;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.15s;
+}
+
+.btnOutline:hover {
+  border-color: var(--blue);
+  background: var(--blue-light);
+}
+
+.howSection {
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  padding: 3.5rem 2rem;
+}
+
+.sectionInner {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.sectionLabel {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--blue);
+  font-weight: 500;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+}
+
+.stepCard {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.5rem;
+}
+
+.stepNum {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--blue);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.stepCard h3 {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: var(--text);
+}
+
+.stepCard p {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.6;
+  font-weight: 300;
+}
+
+.featuresSection {
+  padding: 4rem 2rem;
+}
+
+.sectionTitle {
+  font-family: 'Lora', serif;
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.75rem;
+  color: var(--text);
+  text-align: center;
+}
+
+.sectionSub {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.7;
+  max-width: 500px;
+  margin: 0 auto 2.5rem;
+  font-weight: 300;
+  text-align: center;
+}
+
+.featuresGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.featCard {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.25rem;
+  transition: border-color 0.15s;
+}
+
+.featCard:hover { border-color: var(--blue-mid); }
+
+.featIcon {
+  font-size: 22px;
+  margin-bottom: 0.75rem;
+}
+
+.featCard h3 {
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 4px;
+  color: var(--text);
+}
+
+.featCard p {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.6;
+  font-weight: 300;
+}
+
+.ctaBanner {
+  background: var(--blue);
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.ctaLabel {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.6);
+  margin-bottom: 0.75rem;
+  font-weight: 500;
+}
+
+.ctaBanner h2 {
+  font-family: 'Lora', serif;
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  font-weight: 500;
+  color: #fff;
+  margin-bottom: 0.75rem;
+  letter-spacing: -0.02em;
+}
+
+.ctaBanner p {
+  font-size: 14px;
+  color: rgba(255,255,255,0.7);
+  margin-bottom: 2rem;
+  font-weight: 300;
+}
+
+.ctaBtn {
+  display: inline-block;
+  background: #fff;
+  color: var(--blue);
+  border-radius: 9px;
+  padding: 12px 28px;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: opacity 0.15s;
+}
+
+.ctaBtn:hover { opacity: 0.9; }
+
+.footer {
+  border-top: 1px solid var(--border);
+  padding: 2rem;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.footer a {
+  color: var(--blue);
+  text-decoration: none;
+}
