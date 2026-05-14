@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import { supabase } from '@/lib/supabase'
-import styles from './dashboard.module.css'
+import styles from './profile.module.css'
 
 type Week = { label: string; content: string; resources: string[] }
 type Plan = { title: string; meta: string; overview: string; weeks: Week[]; milestone: string }
