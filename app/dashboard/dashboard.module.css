@@ -4,7 +4,21 @@
   padding: 2.5rem 2rem;
 }
 
-.header { margin-bottom: 2rem; }
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
 
 .header h1 {
   font-family: 'Lora', serif;
@@ -19,6 +33,19 @@
   color: var(--muted);
   font-weight: 300;
 }
+
+.signOutBtn {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 12px;
+  color: var(--muted);
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.signOutBtn:hover { background: var(--surface); }
 
 .stats {
   display: grid;
@@ -56,6 +83,18 @@
   margin-bottom: 0.75rem;
 }
 
+.empty {
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: 14px;
+  padding: 2rem;
+  text-align: center;
+  margin-bottom: 1rem;
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 300;
+}
+
 .courseCard {
   background: #fff;
   border: 1px solid var(--border);
@@ -65,7 +104,11 @@
   display: flex;
   align-items: center;
   gap: 1rem;
+  cursor: pointer;
+  transition: border-color 0.15s;
 }
+
+.courseCard:hover { border-color: var(--blue-mid); }
 
 .courseIcon {
   width: 44px;
@@ -108,7 +151,7 @@
 }
 
 .streak {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--blue);
   white-space: nowrap;
@@ -203,7 +246,6 @@
   border-radius: 8px;
   padding: 9px 20px;
   font-size: 13px;
-  font-weight: 400;
   color: var(--muted);
   transition: background 0.15s;
 }
@@ -222,7 +264,7 @@
 }
 
 .generateBtn:hover:not(:disabled) { background: var(--blue-dark); }
-.generateBtn:disabled { opacity: 0.6; }
+.generateBtn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .planCard {
   background: #fff;
@@ -257,6 +299,7 @@
   font-size: 1.1rem;
   font-weight: 500;
   color: var(--text);
+  flex: 1;
 }
 
 .planMeta {
@@ -265,6 +308,18 @@
   margin-top: 2px;
   font-weight: 300;
 }
+
+.closeBtn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.closeBtn:hover { background: var(--surface); }
 
 .planOverview {
   font-size: 13px;
