@@ -5,7 +5,7 @@ import styles from './Navbar.module.css'
 
 export default function Navbar() {
   const pathname = usePathname()
-  const isDashboard = pathname === '/dashboard'
+  const isDashboard = pathname === '/dashboard' || pathname === '/social'
 
   return (
     <nav className={styles.nav}>
@@ -16,7 +16,8 @@ export default function Navbar() {
         <div className={styles.links}>
           {isDashboard ? (
             <>
-              <Link href="/dashboard" className={styles.link}>Dashboard</Link>
+              <Link href="/dashboard" className={`${styles.link} ${pathname === '/dashboard' ? styles.linkActive : ''}`}>Dashboard</Link>
+              <Link href="/social" className={`${styles.link} ${pathname === '/social' ? styles.linkActive : ''}`}>Community</Link>
               <Link href="/" className={styles.link}>Home</Link>
             </>
           ) : (
