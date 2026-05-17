@@ -7,39 +7,68 @@
 }
 
 :root {
-  --blue: #1D4ED8;
-  --blue-dark: #1639A8;
-  --blue-light: #EFF4FF;
-  --blue-mid: #BFCFF9;
-  --text: #0D1117;
-  --muted: #6B7280;
-  --border: #E5E7EB;
+  --blue: #1535B0;
+  --blue-dark: #0F2490;
+  --blue-deeper: #0A1870;
+  --blue-light: #E8EEFF;
+  --blue-mid: #A8B8F8;
+  --blue-glow: rgba(21, 53, 176, 0.3);
+  --text: #0A0F1E;
+  --muted: #5A6480;
+  --border: #E2E6F0;
+  --border-glass: rgba(255, 255, 255, 0.6);
   --white: #FFFFFF;
-  --surface: #F8FAFF;
+  --surface: #F4F6FD;
+  --glass: rgba(255, 255, 255, 0.7);
+  --glass-hover: rgba(255, 255, 255, 0.85);
+  --shadow-sm: 0 2px 8px rgba(21, 53, 176, 0.08);
+  --shadow-md: 0 4px 20px rgba(21, 53, 176, 0.12);
+  --shadow-lg: 0 8px 40px rgba(21, 53, 176, 0.16);
+  --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-html {
-  scroll-behavior: smooth;
-}
+html { scroll-behavior: smooth; }
 
 body {
   font-family: 'Sora', sans-serif;
-  background: #fff;
+  background: #F0F3FF;
   color: var(--text);
   font-size: 14px;
   -webkit-font-smoothing: antialiased;
+  background-image:
+    radial-gradient(ellipse at 20% 0%, rgba(21, 53, 176, 0.08) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 100%, rgba(21, 53, 176, 0.06) 0%, transparent 60%);
+  background-attachment: fixed;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+a { color: inherit; text-decoration: none; }
+button { cursor: pointer; font-family: 'Sora', sans-serif; }
+input, textarea { font-family: 'Sora', sans-serif; }
+
+/* Glassmorphism utility */
+.glass {
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-glass);
+  box-shadow: var(--shadow-md);
 }
 
-button {
-  cursor: pointer;
-  font-family: 'Sora', sans-serif;
+/* Smooth page transitions */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-input, textarea {
-  font-family: 'Sora', sans-serif;
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.animate-fade-up { animation: fadeUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+.animate-fade-in { animation: fadeIn 0.3s ease forwards; }
