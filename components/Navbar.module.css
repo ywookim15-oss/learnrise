@@ -30,14 +30,9 @@
 }
 
 .logo:hover { opacity: 0.8; }
-
 .logo span { font-style: italic; }
 
-.links {
-  display: flex;
-  align-items: center;
-  gap: 2rem;
-}
+.links { display: flex; align-items: center; gap: 2rem; }
 
 .link {
   font-size: 13px;
@@ -63,6 +58,9 @@
 .link:hover { color: var(--blue); }
 .link:hover::after { transform: scaleX(1); }
 
+.linkActive { color: var(--blue); font-weight: 500; }
+.linkActive::after { transform: scaleX(1); }
+
 .cta {
   background: linear-gradient(135deg, var(--blue), var(--blue-dark));
   color: #fff;
@@ -83,8 +81,5 @@
   box-shadow: 0 4px 20px rgba(21, 53, 176, 0.4);
 }
 
-.ctaArrow {
-  transition: transform 0.2s;
-}
-
+.ctaArrow { transition: transform 0.2s; }
 .cta:hover .ctaArrow { transform: translateX(3px); }
