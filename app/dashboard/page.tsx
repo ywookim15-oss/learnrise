@@ -7,25 +7,32 @@ import { supabase } from '@/lib/supabase'
 import styles from './dashboard.module.css'
 
 type Resource = { name: string; type: string; url: string; why: string }
-type Week = { label: string; theme: string; difficulty: string; estimated_hours: number; content: string; daily_tasks: string[]; resources: Resource[]; checkpoint: string }
-type Plan = { title: string; meta: string; overview: string; prerequisites: string[]; weeks: Week[]; milestone: string; next_steps: string[] }
+type Project = { title: string; description: string; outcome: string }
+type Week = {
+  label: string; theme: string; difficulty: string; estimated_hours: number
+  introduction: string; key_concepts: string[]; content: string
+  daily_tasks: string[]; project: Project; resources: Resource[]
+  common_mistakes: string[]; motivation: string; checkpoint: string
+}
+type Plan = {
+  title: string; meta: string; overview: string; prerequisites: string[]
+  weeks: Week[]; milestone: string; next_steps: string[]
+}
 type Course = { id: string; title: string; meta: string; plan: Plan; created_at: string }
 type Profile = { full_name: string; username: string; avatar_url: string; streak: number; xp: number; level: number }
 
 const resourceTypeIcon: Record<string, string> = {
-  video_course: '🎬',
-  article: '📄',
-  book: '📖',
-  tool: '🛠️',
-  documentation: '📋',
-  podcast: '🎙️',
-  project: '💡',
+  video_course: '🎬', article: '📄', book: '📖',
+  tool: '🛠️', documentation: '📋', podcast: '🎙️', project: '💡',
+}
+
+const resourceTypeLabel: Record<string, string> = {
+  video_course: 'Video Course', article: 'Article', book: 'Book',
+  tool: 'Tool', documentation: 'Docs', podcast: 'Podcast', project: 'Project',
 }
 
 const difficultyColor: Record<string, string> = {
-  Beginner: '#16A34A',
-  Intermediate: '#D97706',
-  Advanced: '#DC2626',
+  Beginner: '#16A34A', Intermediate: '#D97706', Advanced: '#DC2626',
 }
 
 export default function Dashboard() {
@@ -75,7 +82,6 @@ export default function Dashboard() {
       })
       const plan = await res.json()
       if (!res.ok) throw new Error(plan.error || 'Generation failed')
-
       const { data: { session } } = await supabase.auth.getSession()
       if (session) {
         const { data } = await supabase.from('courses').insert({
@@ -83,7 +89,6 @@ export default function Dashboard() {
         }).select().single()
         if (data) setCourses(prev => [data, ...prev])
       }
-
       setActivePlan(plan)
       setActiveWeek(0)
       setShowForm(false)
@@ -117,7 +122,7 @@ export default function Dashboard() {
         {/* Header */}
         <div className={styles.header}>
           <div className={styles.headerLeft}>
-            <div className={styles.headerAvatar}>
+            <div>
               {profile?.avatar_url
                 ? <img src={profile.avatar_url} alt={displayName} className={styles.headerAvatarImg} />
                 : <div className={styles.headerAvatarPlaceholder}>{initials}</div>}
@@ -147,6 +152,8 @@ export default function Dashboard() {
         {/* Active Plan View */}
         {activePlan && (
           <div className={styles.planView}>
+
+            {/* Plan header */}
             <div className={styles.planViewHeader}>
               <div>
                 <h2 className={styles.planViewTitle}>{activePlan.title}</h2>
@@ -176,30 +183,58 @@ export default function Dashboard() {
               ))}
             </div>
 
-            {/* Active week content */}
+            {/* Week content */}
             {activePlan.weeks?.[activeWeek] && (() => {
               const week = activePlan.weeks[activeWeek]
               return (
                 <div className={styles.weekContent}>
+
+                  {/* Week header */}
                   <div className={styles.weekHeader}>
                     <div>
                       <div className={styles.weekLabel}>{week.label}</div>
                       <div className={styles.weekTheme}>{week.theme}</div>
                     </div>
                     <div className={styles.weekMeta}>
-                      <span className={styles.difficultyBadge} style={{ color: difficultyColor[week.difficulty] || '#6B7280', background: difficultyColor[week.difficulty] + '18' }}>
+                      <span className={styles.difficultyBadge} style={{ color: difficultyColor[week.difficulty] || '#6B7280', background: (difficultyColor[week.difficulty] || '#6B7280') + '18' }}>
                         {week.difficulty}
                       </span>
                       <span className={styles.hoursBadge}>⏱ {week.estimated_hours}h</span>
                     </div>
                   </div>
 
+                  {/* Introduction */}
+                  {week.introduction && (
+                    <div className={styles.introBox}>
+                      <p>{week.introduction}</p>
+                    </div>
+                  )}
+
+                  {/* Key concepts */}
+                  {week.key_concepts?.length > 0 && (
+                    <div className={styles.section}>
+                      <div className={styles.sectionTitle}>🧠 Key concepts</div>
+                      <div className={styles.conceptsList}>
+                        {week.key_concepts.map((concept, i) => {
+                          const [name, ...rest] = concept.split(':')
+                          return (
+                            <div key={i} className={styles.conceptItem}>
+                              <span className={styles.conceptName}>{name.trim()}</span>
+                              {rest.length > 0 && <span className={styles.conceptDesc}>{rest.join(':').trim()}</span>}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Content */}
                   <p className={styles.weekDesc}>{week.content}</p>
 
                   {/* Daily tasks */}
                   {week.daily_tasks?.length > 0 && (
                     <div className={styles.section}>
-                      <div className={styles.sectionTitle}>Daily plan</div>
+                      <div className={styles.sectionTitle}>📅 Daily plan</div>
                       <div className={styles.dailyTasks}>
                         {week.daily_tasks.map((task, i) => (
                           <div key={i} className={styles.dailyTask}>
@@ -211,22 +246,71 @@ export default function Dashboard() {
                     </div>
                   )}
 
+                  {/* Project */}
+                  {week.project?.title && (
+                    <div className={styles.section}>
+                      <div className={styles.sectionTitle}>💻 This week&apos;s project</div>
+                      <div className={styles.projectCard}>
+                        <div className={styles.projectTitle}>{week.project.title}</div>
+                        <p className={styles.projectDesc}>{week.project.description}</p>
+                        <div className={styles.projectOutcome}>
+                          <span className={styles.projectOutcomeLabel}>What you&apos;ll have:</span> {week.project.outcome}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Resources */}
                   {week.resources?.length > 0 && (
                     <div className={styles.section}>
-                      <div className={styles.sectionTitle}>Resources</div>
+                      <div className={styles.sectionTitle}>📚 Resources</div>
                       <div className={styles.resources}>
                         {week.resources.map((r, i) => (
-                          <a key={i} href={r.url} target="_blank" rel="noopener noreferrer" className={styles.resourceCard}>
-                            <div className={styles.resourceIcon}>{resourceTypeIcon[r.type] || '🔗'}</div>
-                            <div className={styles.resourceInfo}>
-                              <div className={styles.resourceName}>{r.name}</div>
-                              <div className={styles.resourceWhy}>{r.why}</div>
+                          <a
+                            key={i}
+                            href={r.url?.startsWith('http') ? r.url : `https://${r.url}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={styles.resourceCard}
+                          >
+                            <div className={styles.resourceIconWrap}>
+                              <span className={styles.resourceIcon}>{resourceTypeIcon[r.type] || '🔗'}</span>
                             </div>
-                            <div className={styles.resourceArrow}>→</div>
+                            <div className={styles.resourceInfo}>
+                              <div className={styles.resourceTop}>
+                                <span className={styles.resourceName}>{r.name}</span>
+                                <span className={styles.resourceTypeBadge}>{resourceTypeLabel[r.type] || r.type}</span>
+                              </div>
+                              <div className={styles.resourceWhy}>{r.why}</div>
+                              <div className={styles.resourceUrl}>{r.url}</div>
+                            </div>
+                            <div className={styles.resourceArrow}>↗</div>
                           </a>
                         ))}
                       </div>
+                    </div>
+                  )}
+
+                  {/* Common mistakes */}
+                  {week.common_mistakes?.length > 0 && (
+                    <div className={styles.section}>
+                      <div className={styles.sectionTitle}>⚠️ Common mistakes to avoid</div>
+                      <div className={styles.mistakesList}>
+                        {week.common_mistakes.map((m, i) => (
+                          <div key={i} className={styles.mistakeItem}>
+                            <span className={styles.mistakeIcon}>✕</span>
+                            <p>{m}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Motivation */}
+                  {week.motivation && (
+                    <div className={styles.motivationBox}>
+                      <span className={styles.motivationIcon}>💪</span>
+                      <p>{week.motivation}</p>
                     </div>
                   )}
 
@@ -238,7 +322,7 @@ export default function Dashboard() {
                     </div>
                   )}
 
-                  {/* Week navigation */}
+                  {/* Week nav */}
                   <div className={styles.weekNav}>
                     <button className={styles.weekNavBtn} onClick={() => setActiveWeek(w => Math.max(0, w - 1))} disabled={activeWeek === 0}>← Previous week</button>
                     <button className={styles.weekNavBtn} onClick={() => setActiveWeek(w => Math.min(activePlan.weeks.length - 1, w + 1))} disabled={activeWeek === activePlan.weeks.length - 1}>Next week →</button>
@@ -258,10 +342,10 @@ export default function Dashboard() {
             {/* Next steps */}
             {activePlan.next_steps?.length > 0 && (
               <div className={styles.nextSteps}>
-                <div className={styles.nextStepsTitle}>What's next after this plan</div>
-                <div className={styles.nextStepsList}>
-                  {activePlan.next_steps.map((s, i) => <div key={i} className={styles.nextStep}>→ {s}</div>)}
-                </div>
+                <div className={styles.nextStepsTitle}>🚀 What&apos;s next after this plan</div>
+                {activePlan.next_steps.map((s, i) => (
+                  <div key={i} className={styles.nextStep}>→ {s}</div>
+                ))}
               </div>
             )}
           </div>
