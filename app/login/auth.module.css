@@ -1,24 +1,46 @@
 .overlay {
-  min-height: calc(100vh - 62px);
-  background: var(--surface);
+  min-height: calc(100vh - 64px);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 2rem;
+  position: relative;
+}
+
+.overlay::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(21, 53, 176, 0.1) 0%, transparent 60%),
+    radial-gradient(ellipse at 70% 80%, rgba(21, 53, 176, 0.07) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
 }
 
 .card {
-  background: #fff;
-  border-radius: 18px;
-  border: 1px solid var(--border);
-  padding: 2.25rem;
+  position: relative;
+  z-index: 1;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 8px 40px rgba(21, 53, 176, 0.12), 0 1px 0 rgba(255,255,255,0.6) inset;
+  padding: 2.5rem;
   width: 100%;
-  max-width: 380px;
+  max-width: 400px;
+  animation: fadeUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .logo {
   font-family: 'Lora', serif;
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   font-weight: 500;
   color: var(--blue);
   margin-bottom: 1.75rem;
@@ -26,10 +48,11 @@
 }
 
 .title {
-  font-size: 1.1rem;
-  font-weight: 500;
+  font-size: 1.2rem;
+  font-weight: 600;
   margin-bottom: 0.4rem;
   color: var(--text);
+  letter-spacing: -0.02em;
 }
 
 .sub {
@@ -37,6 +60,7 @@
   color: var(--muted);
   margin-bottom: 1.75rem;
   font-weight: 300;
+  line-height: 1.5;
 }
 
 .label {
@@ -44,45 +68,51 @@
   font-weight: 500;
   color: var(--text);
   display: block;
-  margin-bottom: 5px;
+  margin-bottom: 6px;
 }
 
 .input {
   width: 100%;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 9px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
   font-size: 13px;
   outline: none;
   margin-bottom: 1rem;
   color: var(--text);
-  transition: border-color 0.15s, box-shadow 0.15s;
-  background: #fff;
+  transition: all 0.2s;
+  background: rgba(255, 255, 255, 0.8);
 }
 
 .input:focus {
   border-color: var(--blue);
-  box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.08);
+  box-shadow: 0 0 0 3px rgba(21, 53, 176, 0.1);
+  background: #fff;
 }
 
 .btn {
   display: block;
   width: 100%;
-  background: var(--blue);
+  background: linear-gradient(135deg, var(--blue), var(--blue-dark));
   color: #fff;
-  border-radius: 9px;
-  padding: 11px;
+  border-radius: 10px;
+  padding: 12px;
   font-size: 14px;
   font-weight: 500;
   text-align: center;
   text-decoration: none;
   margin-bottom: 1rem;
-  transition: background 0.15s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   border: none;
   cursor: pointer;
+  box-shadow: 0 3px 14px rgba(21, 53, 176, 0.3);
 }
 
-.btn:hover:not(:disabled) { background: var(--blue-dark); }
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(21, 53, 176, 0.4);
+}
+
 .btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .divider {
@@ -104,16 +134,16 @@
 }
 
 .divider span {
-  background: #fff;
+  background: rgba(255, 255, 255, 0.9);
   padding: 0 10px;
   position: relative;
 }
 
 .google {
   width: 100%;
-  background: #fff;
-  border: 1px solid var(--border);
-  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
   padding: 10px;
   font-size: 13px;
   font-weight: 400;
@@ -122,12 +152,16 @@
   justify-content: center;
   gap: 8px;
   color: var(--text);
-  margin-bottom: 1.25rem;
-  transition: background 0.15s;
+  margin-bottom: 1.5rem;
+  transition: all 0.2s;
   cursor: pointer;
 }
 
-.google:hover { background: var(--surface); }
+.google:hover {
+  background: #fff;
+  border-color: #ccc;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
 
 .switch {
   text-align: center;
@@ -139,10 +173,13 @@
   color: var(--blue);
   font-weight: 500;
   text-decoration: none;
+  transition: opacity 0.15s;
 }
 
+.switch a:hover { opacity: 0.75; }
+
 .error {
-  background: #FEF2F2;
+  background: rgba(254, 242, 242, 0.9);
   border: 1px solid #FECACA;
   border-radius: 8px;
   padding: 0.75rem 1rem;
@@ -153,7 +190,7 @@
 }
 
 .successMsg {
-  background: #F0FDF4;
+  background: rgba(240, 253, 244, 0.9);
   border: 1px solid #BBF7D0;
   border-radius: 8px;
   padding: 0.75rem 1rem;
