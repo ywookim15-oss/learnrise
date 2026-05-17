@@ -6,10 +6,27 @@ import Navbar from '@/components/Navbar'
 import { supabase } from '@/lib/supabase'
 import styles from './dashboard.module.css'
 
-type Week = { label: string; content: string; resources: string[] }
-type Plan = { title: string; meta: string; overview: string; weeks: Week[]; milestone: string }
+type Resource = { name: string; type: string; url: string; why: string }
+type Week = { label: string; theme: string; difficulty: string; estimated_hours: number; content: string; daily_tasks: string[]; resources: Resource[]; checkpoint: string }
+type Plan = { title: string; meta: string; overview: string; prerequisites: string[]; weeks: Week[]; milestone: string; next_steps: string[] }
 type Course = { id: string; title: string; meta: string; plan: Plan; created_at: string }
-type Profile = { full_name: string; username: string; avatar_url: string; streak: number; xp: number; level: number; is_public: boolean }
+type Profile = { full_name: string; username: string; avatar_url: string; streak: number; xp: number; level: number }
+
+const resourceTypeIcon: Record<string, string> = {
+  video_course: '🎬',
+  article: '📄',
+  book: '📖',
+  tool: '🛠️',
+  documentation: '📋',
+  podcast: '🎙️',
+  project: '💡',
+}
+
+const difficultyColor: Record<string, string> = {
+  Beginner: '#16A34A',
+  Intermediate: '#D97706',
+  Advanced: '#DC2626',
+}
 
 export default function Dashboard() {
   const router = useRouter()
@@ -22,6 +39,7 @@ export default function Dashboard() {
   const [goal, setGoal] = useState('')
   const [loading, setLoading] = useState(false)
   const [activePlan, setActivePlan] = useState<Plan | null>(null)
+  const [activeWeek, setActiveWeek] = useState(0)
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -29,25 +47,15 @@ export default function Dashboard() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { router.push('/login'); return }
       setUser({ email: session.user.email!, id: session.user.id })
-
-      const { data: prof } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .single()
+      const { data: prof } = await supabase.from('profiles').select('*').eq('id', session.user.id).single()
       if (prof) setProfile(prof)
-
       loadCourses(session.user.id)
     }
     init()
   }, [router])
 
   async function loadCourses(userId: string) {
-    const { data } = await supabase
-      .from('courses')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
+    const { data } = await supabase.from('courses').select('*').eq('user_id', userId).order('created_at', { ascending: false })
     if (data) setCourses(data)
   }
 
@@ -71,15 +79,13 @@ export default function Dashboard() {
       const { data: { session } } = await supabase.auth.getSession()
       if (session) {
         const { data } = await supabase.from('courses').insert({
-          user_id: session.user.id,
-          title: plan.title,
-          meta: plan.meta,
-          plan,
+          user_id: session.user.id, title: plan.title, meta: plan.meta, plan,
         }).select().single()
         if (data) setCourses(prev => [data, ...prev])
       }
 
       setActivePlan(plan)
+      setActiveWeek(0)
       setShowForm(false)
       setTopic(''); setTime(''); setGoal('')
     } catch (e: unknown) {
@@ -87,6 +93,13 @@ export default function Dashboard() {
     } finally {
       setLoading(false)
     }
+  }
+
+  function openCourse(course: Course) {
+    setActivePlan(course.plan)
+    setActiveWeek(0)
+    setShowForm(false)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const displayName = profile?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'there'
@@ -100,14 +113,14 @@ export default function Dashboard() {
     <>
       <Navbar />
       <main className={styles.main}>
+
+        {/* Header */}
         <div className={styles.header}>
           <div className={styles.headerLeft}>
             <div className={styles.headerAvatar}>
-              {profile?.avatar_url ? (
-                <img src={profile.avatar_url} alt={displayName} className={styles.headerAvatarImg} />
-              ) : (
-                <div className={styles.headerAvatarPlaceholder}>{initials}</div>
-              )}
+              {profile?.avatar_url
+                ? <img src={profile.avatar_url} alt={displayName} className={styles.headerAvatarImg} />
+                : <div className={styles.headerAvatarPlaceholder}>{initials}</div>}
             </div>
             <div>
               <h1>Welcome back, {displayName} 👋</h1>
@@ -116,20 +129,14 @@ export default function Dashboard() {
           </div>
           <div className={styles.headerActions}>
             <Link href="/profile/edit" className={styles.editProfileBtn}>Edit profile</Link>
-            {profile?.username && (
-              <Link href={`/profile/${profile.username}`} className={styles.viewProfileBtn}>View profile</Link>
-            )}
+            {profile?.username && <Link href={`/profile/${profile.username}`} className={styles.viewProfileBtn}>View profile</Link>}
             <button className={styles.signOutBtn} onClick={handleSignOut}>Sign out</button>
           </div>
         </div>
 
+        {/* Stats */}
         <div className={styles.stats}>
-          {[
-            ['🔥 ' + (profile?.streak || 0), 'Day streak'],
-            [String(profile?.xp || 0), 'Total XP'],
-            ['Lv. ' + (profile?.level || 1), 'Level'],
-            [String(courses.length), 'Courses'],
-          ].map(([val, label]) => (
+          {[['🔥 ' + (profile?.streak || 0), 'Day streak'], [String(profile?.xp || 0), 'Total XP'], ['Lv. ' + (profile?.level || 1), 'Level'], [String(courses.length), 'Courses']].map(([val, label]) => (
             <div key={label} className={styles.stat}>
               <div className={styles.statVal}>{val}</div>
               <div className={styles.statLabel}>{label}</div>
@@ -137,74 +144,172 @@ export default function Dashboard() {
           ))}
         </div>
 
-        <p className={styles.sectionTitle}>Your courses</p>
-
-        {courses.length === 0 && !showForm && !activePlan && (
-          <div className={styles.empty}>No courses yet. Create your first one below!</div>
-        )}
-
-        {courses.map(course => (
-          <div key={course.id} className={styles.courseCard} onClick={() => setActivePlan(course.plan)}>
-            <div className={styles.courseIcon}>📚</div>
-            <div className={styles.courseInfo}>
-              <div className={styles.courseTitle}>{course.title}</div>
-              <div className={styles.courseMeta}>{course.meta}</div>
-              <div className={styles.progressBar}><div className={styles.progressFill} style={{ width: '5%' }} /></div>
-            </div>
-            <div className={styles.streak}>View →</div>
-          </div>
-        ))}
-
+        {/* Active Plan View */}
         {activePlan && (
-          <div className={styles.planCard}>
-            <div className={styles.planHeader}>
-              <div className={styles.planIcon}>📚</div>
+          <div className={styles.planView}>
+            <div className={styles.planViewHeader}>
               <div>
-                <div className={styles.planTitle}>{activePlan.title}</div>
-                <div className={styles.planMeta}>{activePlan.meta}</div>
+                <h2 className={styles.planViewTitle}>{activePlan.title}</h2>
+                <p className={styles.planViewMeta}>{activePlan.meta}</p>
               </div>
-              <button className={styles.closeBtn} onClick={() => setActivePlan(null)}>✕</button>
+              <button className={styles.closeBtn} onClick={() => setActivePlan(null)}>✕ Close</button>
             </div>
-            {activePlan.overview && <p className={styles.planOverview}>{activePlan.overview}</p>}
-            {activePlan.weeks?.map((week, i) => (
-              <div key={i} className={styles.weekBlock}>
-                <div className={styles.weekLabel}>{week.label}</div>
-                <p className={styles.weekContent}>{week.content}</p>
-                {week.resources?.length > 0 && (
-                  <div className={styles.resources}>
-                    {week.resources.map((r, j) => <span key={j} className={styles.resourceTag}>🔗 {r}</span>)}
-                  </div>
-                )}
+
+            <p className={styles.planOverview}>{activePlan.overview}</p>
+
+            {/* Prerequisites */}
+            {activePlan.prerequisites?.length > 0 && (
+              <div className={styles.prereqBox}>
+                <div className={styles.prereqTitle}>📌 Before you start</div>
+                <div className={styles.prereqList}>
+                  {activePlan.prerequisites.map((p, i) => <span key={i} className={styles.prereqTag}>{p}</span>)}
+                </div>
               </div>
-            ))}
+            )}
+
+            {/* Week tabs */}
+            <div className={styles.weekTabs}>
+              {activePlan.weeks?.map((week, i) => (
+                <button key={i} className={`${styles.weekTab} ${activeWeek === i ? styles.weekTabActive : ''}`} onClick={() => setActiveWeek(i)}>
+                  Week {i + 1}
+                </button>
+              ))}
+            </div>
+
+            {/* Active week content */}
+            {activePlan.weeks?.[activeWeek] && (() => {
+              const week = activePlan.weeks[activeWeek]
+              return (
+                <div className={styles.weekContent}>
+                  <div className={styles.weekHeader}>
+                    <div>
+                      <div className={styles.weekLabel}>{week.label}</div>
+                      <div className={styles.weekTheme}>{week.theme}</div>
+                    </div>
+                    <div className={styles.weekMeta}>
+                      <span className={styles.difficultyBadge} style={{ color: difficultyColor[week.difficulty] || '#6B7280', background: difficultyColor[week.difficulty] + '18' }}>
+                        {week.difficulty}
+                      </span>
+                      <span className={styles.hoursBadge}>⏱ {week.estimated_hours}h</span>
+                    </div>
+                  </div>
+
+                  <p className={styles.weekDesc}>{week.content}</p>
+
+                  {/* Daily tasks */}
+                  {week.daily_tasks?.length > 0 && (
+                    <div className={styles.section}>
+                      <div className={styles.sectionTitle}>Daily plan</div>
+                      <div className={styles.dailyTasks}>
+                        {week.daily_tasks.map((task, i) => (
+                          <div key={i} className={styles.dailyTask}>
+                            <div className={styles.dayDot} />
+                            <p>{task}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Resources */}
+                  {week.resources?.length > 0 && (
+                    <div className={styles.section}>
+                      <div className={styles.sectionTitle}>Resources</div>
+                      <div className={styles.resources}>
+                        {week.resources.map((r, i) => (
+                          <a key={i} href={r.url} target="_blank" rel="noopener noreferrer" className={styles.resourceCard}>
+                            <div className={styles.resourceIcon}>{resourceTypeIcon[r.type] || '🔗'}</div>
+                            <div className={styles.resourceInfo}>
+                              <div className={styles.resourceName}>{r.name}</div>
+                              <div className={styles.resourceWhy}>{r.why}</div>
+                            </div>
+                            <div className={styles.resourceArrow}>→</div>
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Checkpoint */}
+                  {week.checkpoint && (
+                    <div className={styles.checkpoint}>
+                      <div className={styles.checkpointTitle}>✅ Week checkpoint</div>
+                      <p>{week.checkpoint}</p>
+                    </div>
+                  )}
+
+                  {/* Week navigation */}
+                  <div className={styles.weekNav}>
+                    <button className={styles.weekNavBtn} onClick={() => setActiveWeek(w => Math.max(0, w - 1))} disabled={activeWeek === 0}>← Previous week</button>
+                    <button className={styles.weekNavBtn} onClick={() => setActiveWeek(w => Math.min(activePlan.weeks.length - 1, w + 1))} disabled={activeWeek === activePlan.weeks.length - 1}>Next week →</button>
+                  </div>
+                </div>
+              )
+            })()}
+
+            {/* Milestone */}
             {activePlan.milestone && (
               <div className={styles.milestone}>
-                <div className={styles.milestoneLabel}>Your milestone</div>
+                <div className={styles.milestoneLabel}>🏆 Final milestone</div>
                 <p>{activePlan.milestone}</p>
+              </div>
+            )}
+
+            {/* Next steps */}
+            {activePlan.next_steps?.length > 0 && (
+              <div className={styles.nextSteps}>
+                <div className={styles.nextStepsTitle}>What's next after this plan</div>
+                <div className={styles.nextStepsList}>
+                  {activePlan.next_steps.map((s, i) => <div key={i} className={styles.nextStep}>→ {s}</div>)}
+                </div>
               </div>
             )}
           </div>
         )}
 
+        {/* Course list */}
+        {!activePlan && (
+          <>
+            <p className={styles.sectionTitleMain}>Your courses</p>
+            {courses.length === 0 && !showForm && (
+              <div className={styles.empty}>No courses yet. Create your first one below!</div>
+            )}
+            {courses.map(course => (
+              <div key={course.id} className={styles.courseCard} onClick={() => openCourse(course)}>
+                <div className={styles.courseIcon}>📚</div>
+                <div className={styles.courseInfo}>
+                  <div className={styles.courseTitle}>{course.title}</div>
+                  <div className={styles.courseMeta}>{course.meta}</div>
+                  <div className={styles.progressBar}><div className={styles.progressFill} style={{ width: '5%' }} /></div>
+                </div>
+                <div className={styles.courseArrow}>View →</div>
+              </div>
+            ))}
+          </>
+        )}
+
+        {/* New plan form */}
         {showForm ? (
           <div className={styles.formCard}>
             <div className={styles.formTitle}>New learning plan</div>
             <label className={styles.fieldLabel}>What do you want to learn?</label>
-            <textarea className={styles.textarea} rows={3} placeholder="e.g. I want to learn Python for data analysis..." value={topic} onChange={e => setTopic(e.target.value)} />
+            <textarea className={styles.textarea} rows={3} placeholder="e.g. I want to learn Python for data analysis, focusing on pandas and building dashboards..." value={topic} onChange={e => setTopic(e.target.value)} />
             <label className={styles.fieldLabel}>Your time &amp; schedule</label>
-            <textarea className={styles.textarea} rows={2} placeholder="e.g. I have 8 weeks, 1 hour each weekday evening..." value={time} onChange={e => setTime(e.target.value)} />
+            <textarea className={styles.textarea} rows={2} placeholder="e.g. I have 8 weeks, 1 hour each weekday evening and 3 hours on weekends..." value={time} onChange={e => setTime(e.target.value)} />
             <label className={styles.fieldLabel}>Your goal &amp; motivation</label>
-            <textarea className={styles.textarea} rows={2} placeholder="e.g. I want to get a data analyst job in 6 months..." value={goal} onChange={e => setGoal(e.target.value)} />
+            <textarea className={styles.textarea} rows={2} placeholder="e.g. I want to transition into a data analyst role within 6 months..." value={goal} onChange={e => setGoal(e.target.value)} />
             {error && <p className={styles.error}>{error}</p>}
             <div className={styles.formBtns}>
               <button className={styles.cancelBtn} onClick={() => setShowForm(false)}>Cancel</button>
               <button className={styles.generateBtn} onClick={generatePlan} disabled={loading}>
-                {loading ? 'Generating plan...' : '✦ Generate my plan'}
+                {loading ? 'Building your plan...' : '✦ Generate my plan'}
               </button>
             </div>
           </div>
         ) : (
-          <button className={styles.newBtn} onClick={() => setShowForm(true)}>+ New learning plan</button>
+          <button className={styles.newBtn} onClick={() => { setActivePlan(null); setShowForm(true) }}>
+            + New learning plan
+          </button>
         )}
       </main>
     </>
