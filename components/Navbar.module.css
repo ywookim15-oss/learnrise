@@ -1,33 +1,42 @@
 .nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 2rem;
-  height: 62px;
-  border-bottom: 1px solid var(--border);
-  background: #fff;
   position: sticky;
   top: 0;
   z-index: 100;
+  padding: 0 1.5rem;
+  background: rgba(240, 243, 255, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 1px 20px rgba(21, 53, 176, 0.06);
+}
+
+.inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .logo {
   font-family: 'Lora', serif;
-  font-size: 1.25rem;
+  font-size: 1.3rem;
   font-weight: 500;
   color: var(--blue);
   letter-spacing: -0.02em;
   text-decoration: none;
+  transition: opacity 0.2s;
 }
 
-.logo span {
-  font-style: italic;
-}
+.logo:hover { opacity: 0.8; }
+
+.logo span { font-style: italic; }
 
 .links {
   display: flex;
   align-items: center;
-  gap: 1.75rem;
+  gap: 2rem;
 }
 
 .link {
@@ -35,24 +44,47 @@
   color: var(--muted);
   text-decoration: none;
   font-weight: 400;
-  transition: color 0.15s;
+  transition: color 0.2s;
+  position: relative;
 }
 
-.link:hover {
-  color: var(--text);
+.link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 1.5px;
+  background: var(--blue);
+  transform: scaleX(0);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+.link:hover { color: var(--blue); }
+.link:hover::after { transform: scaleX(1); }
 
 .cta {
-  background: var(--blue);
+  background: linear-gradient(135deg, var(--blue), var(--blue-dark));
   color: #fff;
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 8px 18px;
   font-size: 13px;
   font-weight: 500;
   text-decoration: none;
-  transition: background 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 12px rgba(21, 53, 176, 0.3);
 }
 
 .cta:hover {
-  background: var(--blue-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(21, 53, 176, 0.4);
 }
+
+.ctaArrow {
+  transition: transform 0.2s;
+}
+
+.cta:hover .ctaArrow { transform: translateX(3px); }
