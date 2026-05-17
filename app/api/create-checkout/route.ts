@@ -10,12 +10,10 @@ const supabase = createClient(
 export async function POST(req: NextRequest) {
   try {
     const { userId, email } = await req.json()
-
     if (!userId || !email) {
       return NextResponse.json({ error: 'Missing user info' }, { status: 400 })
     }
 
-    // Get or create Stripe customer
     const { data: profile } = await supabase
       .from('profiles')
       .select('stripe_customer_id')
@@ -30,7 +28,6 @@ export async function POST(req: NextRequest) {
         metadata: { supabase_user_id: userId },
       })
       customerId = customer.id
-
       await supabase
         .from('profiles')
         .update({ stripe_customer_id: customerId })
@@ -47,8 +44,8 @@ export async function POST(req: NextRequest) {
           quantity: 1,
         },
       ],
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pricing`,
+      success_url: 'https://learnrise-eight.vercel.app/success?session_id={CHECKOUT_SESSION_ID}',
+      cancel_url: 'https://learnrise-eight.vercel.app/pricing',
       subscription_data: {
         metadata: { supabase_user_id: userId },
       },
