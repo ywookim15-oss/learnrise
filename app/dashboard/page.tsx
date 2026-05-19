@@ -8,11 +8,12 @@ import styles from './dashboard.module.css'
 
 type Resource = { name: string; type: string; url: string; why: string }
 type Project = { title: string; description: string; outcome: string }
+type CheckpointObj = { question: string; criteria: string[] }
 type Week = {
   label: string; theme: string; difficulty: string; estimated_hours: number
   introduction: string; key_concepts: string[]; content: string
   daily_tasks: string[]; project: Project; resources: Resource[]
-  common_mistakes: string[]; motivation: string; checkpoint: string
+  common_mistakes: string[]; motivation: string; checkpoint: string | CheckpointObj
 }
 type Plan = {
   title: string; meta: string; overview: string; prerequisites: string[]
@@ -64,14 +65,11 @@ export default function Dashboard() {
       if (!session) { router.push('/login'); return }
       setUserId(session.user.id)
       setUserEmail(session.user.email || '')
-
       const { data: prof } = await supabase.from('profiles').select('*').eq('id', session.user.id).single()
       if (prof) {
         setProfile(prof)
-        // Redirect to onboarding if not onboarded yet
         if (!prof.onboarded) { router.push('/onboarding'); return }
       }
-
       loadCourses(session.user.id)
     }
     init()
@@ -90,10 +88,7 @@ export default function Dashboard() {
   async function handleDeleteCourse(courseId: string) {
     await supabase.from('courses').delete().eq('id', courseId)
     setCourses(prev => prev.filter(c => c.id !== courseId))
-    if (activeCourse?.id === courseId) {
-      setActiveCourse(null)
-      setActivePlan(null)
-    }
+    if (activeCourse?.id === courseId) { setActiveCourse(null); setActivePlan(null) }
     setDeleteConfirm(null)
   }
 
@@ -108,40 +103,29 @@ export default function Dashboard() {
       })
       const plan = await res.json()
       if (!res.ok) throw new Error(plan.error || 'Generation failed')
-
       const { data: { session } } = await supabase.auth.getSession()
       if (session) {
         const { data: newCourse } = await supabase.from('courses').insert({
           user_id: session.user.id, title: plan.title, meta: plan.meta, plan, skill_level: skillLevel,
         }).select().single()
-
         if (newCourse) {
           setCourses(prev => [newCourse, ...prev])
           setActiveCourse(newCourse)
-
           if (profile) {
             await supabase.from('activity_feed').insert({
-              user_id: session.user.id,
-              username: profile.username,
-              full_name: profile.full_name,
-              avatar_url: profile.avatar_url,
-              action: 'created_course',
-              course_title: plan.title,
+              user_id: session.user.id, username: profile.username,
+              full_name: profile.full_name, avatar_url: profile.avatar_url,
+              action: 'created_course', course_title: plan.title,
               detail: `${skillLevel} level · ${plan.meta}`,
             })
           }
         }
       }
-
-      setActivePlan(plan)
-      setActiveWeek(0)
-      setShowForm(false)
+      setActivePlan(plan); setActiveWeek(0); setShowForm(false)
       setTopic(''); setTime(''); setGoal('')
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Something went wrong.')
-    } finally {
-      setLoading(false)
-    }
+    } finally { setLoading(false) }
   }
 
   async function handleCheckin() {
@@ -149,17 +133,13 @@ export default function Dashboard() {
     setCheckinLoading(true)
     try {
       const res = await fetch('/api/checkin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, courseId: activeCourse.id }),
       })
       const data = await res.json()
-      if (data.alreadyDone) {
-        setCheckinDone(true)
-        setXpPopup('Already checked in today! ✓')
-      } else if (data.success) {
-        setCheckinDone(true)
-        setXpPopup(`+${data.xpEarned} XP! 🔥`)
+      if (data.alreadyDone) { setCheckinDone(true); setXpPopup('Already checked in today! ✓') }
+      else if (data.success) {
+        setCheckinDone(true); setXpPopup(`+${data.xpEarned} XP! 🔥`)
         if (data.profile) setProfile(p => p ? { ...p, ...data.profile } : p)
       }
       setTimeout(() => setXpPopup(''), 2500)
@@ -173,8 +153,7 @@ export default function Dashboard() {
     try {
       const original = activeCourse.plan
       const res = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           topic: original.title, time: original.meta, goal: original.overview,
           skillLevel: activeCourse.skill_level, regenerateWith: regenNote,
@@ -184,23 +163,31 @@ export default function Dashboard() {
       if (!res.ok) throw new Error(plan.error)
       await supabase.from('courses').update({ plan }).eq('id', activeCourse.id)
       setCourses(prev => prev.map(c => c.id === activeCourse.id ? { ...c, plan } : c))
-      setActivePlan(plan)
-      setActiveCourse(prev => prev ? { ...prev, plan } : prev)
-      setShowRegenForm(false)
-      setRegenNote('')
-      setActiveWeek(0)
+      setActivePlan(plan); setActiveCourse(prev => prev ? { ...prev, plan } : prev)
+      setShowRegenForm(false); setRegenNote(''); setActiveWeek(0)
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Regeneration failed.')
     } finally { setRegenLoading(false) }
   }
 
   function openCourse(course: Course) {
-    setActiveCourse(course)
-    setActivePlan(course.plan)
-    setActiveWeek(0)
-    setShowForm(false)
-    setCheckinDone(false)
+    setActiveCourse(course); setActivePlan(course.plan)
+    setActiveWeek(0); setShowForm(false); setCheckinDone(false)
     window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function renderCheckpoint(checkpoint: string | CheckpointObj) {
+    if (typeof checkpoint === 'string') {
+      return <p className={styles.checkpointText}>{checkpoint}</p>
+    }
+    return (
+      <>
+        {checkpoint.question && <p className={styles.checkpointText}>{checkpoint.question}</p>}
+        {checkpoint.criteria?.map((c: string, i: number) => (
+          <p key={i} className={styles.checkpointCriterion}>• {c}</p>
+        ))}
+      </>
+    )
   }
 
   const today = new Date().toISOString().split('T')[0]
@@ -219,7 +206,6 @@ export default function Dashboard() {
 
         {xpPopup && <div className={styles.xpPopup}>{xpPopup}</div>}
 
-        {/* Delete confirm modal */}
         {deleteConfirm && (
           <div className={styles.modalOverlay}>
             <div className={styles.modal}>
@@ -234,7 +220,6 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Header */}
         <div className={styles.header}>
           <div className={styles.headerLeft}>
             <div>
@@ -255,7 +240,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Stats */}
         <div className={styles.stats}>
           {[
             ['🔥 ' + (profile?.streak || 0), 'Day streak'],
@@ -270,7 +254,6 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* Active Plan View */}
         {activePlan && activeCourse && (
           <div className={styles.planView}>
             <div className={styles.planViewHeader}>
@@ -346,7 +329,7 @@ export default function Dashboard() {
                 <div className={styles.weekContent}>
                   <div className={styles.weekHeader}>
                     <div>
-                      <div className={styles.weekLabel}>{week.label}</div>
+                      <div className={styles.weekLabel}>{week.label || `Week ${activeWeek + 1}`}</div>
                       <div className={styles.weekTheme}>{week.theme}</div>
                     </div>
                     <div className={styles.weekMeta}>
@@ -376,7 +359,7 @@ export default function Dashboard() {
                     </div>
                   )}
 
-                  <p className={styles.weekDesc}>{week.content}</p>
+                  {week.content && <p className={styles.weekDesc}>{week.content}</p>}
 
                   {week.daily_tasks?.length > 0 && (
                     <div className={styles.section}>
@@ -453,10 +436,7 @@ export default function Dashboard() {
                   {week.checkpoint && (
                     <div className={styles.checkpoint}>
                       <div className={styles.checkpointTitle}>✅ Week checkpoint</div>
-                      <p>{typeof week.checkpoint === 'string' ? week.checkpoint : week.checkpoint.question}</p>
-                      {typeof week.checkpoint !== 'string' && week.checkpoint.criteria?.map((c: string, i: number) => (
-                        <p key={i} style={{fontSize:'12px', color:'#166534', marginTop:'4px'}}>• {c}</p>
-                      ))}
+                      {renderCheckpoint(week.checkpoint)}
                     </div>
                   )}
 
@@ -484,7 +464,6 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Course list */}
         {!activePlan && (
           <>
             <p className={styles.sectionTitleMain}>Your courses</p>
@@ -501,10 +480,7 @@ export default function Dashboard() {
                 </div>
                 <div className={styles.courseRight}>
                   {course.last_checkin === today && <span className={styles.checkedBadge}>✓ Today</span>}
-                  <button
-                    className={styles.courseDeleteBtn}
-                    onClick={e => { e.stopPropagation(); setDeleteConfirm(course.id) }}
-                  >🗑️</button>
+                  <button className={styles.courseDeleteBtn} onClick={e => { e.stopPropagation(); setDeleteConfirm(course.id) }}>🗑️</button>
                   <span className={styles.courseArrow}>View →</span>
                 </div>
               </div>
@@ -512,7 +488,6 @@ export default function Dashboard() {
           </>
         )}
 
-        {/* New plan form */}
         {showForm ? (
           <div className={styles.formCard}>
             <div className={styles.formTitle}>New learning plan</div>
