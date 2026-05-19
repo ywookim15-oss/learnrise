@@ -243,3 +243,6 @@
   .weekNavBtn { flex: 1; text-align: center; }
   .planHeaderActions { gap: 5px; }
 }
+
+.checkpointText { font-size: 13px; color: #166534; line-height: 1.6; font-weight: 300; margin-bottom: 4px; }
+.checkpointCriterion { font-size: 12px; color: #166534; margin-top: 4px; font-weight: 300; }
