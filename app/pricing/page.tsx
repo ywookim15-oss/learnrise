@@ -7,15 +7,18 @@ import styles from './pricing.module.css'
 
 export default function Pricing() {
   const [loading, setLoading] = useState(false)
+  const [portalLoading, setPortalLoading] = useState(false)
   const [userId, setUserId] = useState('')
   const [email, setEmail] = useState('')
   const [isPremium, setIsPremium] = useState(false)
-  const [portalLoading, setPortalLoading] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [checking, setChecking] = useState(true)
 
   useEffect(() => {
     async function init() {
       const { data: { session } } = await supabase.auth.getSession()
       if (session) {
+        setIsLoggedIn(true)
         setUserId(session.user.id)
         setEmail(session.user.email || '')
         const { data: profile } = await supabase
@@ -25,12 +28,13 @@ export default function Pricing() {
           .single()
         if (profile?.subscription_status === 'active') setIsPremium(true)
       }
+      setChecking(false)
     }
     init()
   }, [])
 
   async function handleUpgrade() {
-    if (!userId) { window.location.href = '/signup'; return }
+    if (!isLoggedIn) { window.location.href = '/signup'; return }
     setLoading(true)
     try {
       const res = await fetch('/api/create-checkout', {
@@ -48,7 +52,6 @@ export default function Pricing() {
   }
 
   async function handleManage() {
-    if (!userId) return
     setPortalLoading(true)
     try {
       const res = await fetch('/api/customer-portal', {
@@ -65,6 +68,8 @@ export default function Pricing() {
     }
   }
 
+  if (checking) return null
+
   return (
     <>
       <Navbar />
@@ -76,6 +81,7 @@ export default function Pricing() {
         </div>
 
         <div className={styles.grid}>
+
           {/* Free plan */}
           <div className={styles.planCard}>
             <div className={styles.planName}>Free</div>
@@ -88,7 +94,17 @@ export default function Pricing() {
               <li>✓ Public learning profile</li>
               <li>✓ Community &amp; leaderboard</li>
             </ul>
-            <Link href="/signup" className={styles.btnFree}>Get started free</Link>
+
+            {/* Free plan button states */}
+            {!isLoggedIn ? (
+              <Link href="/signup" className={styles.btnFree}>Get started free</Link>
+            ) : !isPremium ? (
+              <div className={styles.currentPlanBadge}>✓ Your current plan</div>
+            ) : (
+              <button className={styles.btnManage} onClick={handleManage} disabled={portalLoading}>
+                {portalLoading ? 'Loading...' : 'Switch to Free'}
+              </button>
+            )}
           </div>
 
           {/* Premium plan */}
@@ -107,7 +123,11 @@ export default function Pricing() {
               <li>✓ Progress export</li>
               <li>✓ Early access to features</li>
             </ul>
-            {isPremium ? (
+
+            {/* Premium plan button states */}
+            {!isLoggedIn ? (
+              <Link href="/signup" className={styles.btnPro}>Get started free</Link>
+            ) : isPremium ? (
               <div className={styles.premiumActions}>
                 <div className={styles.activeBadge}>✓ You&apos;re on Premium</div>
                 <button className={styles.btnManage} onClick={handleManage} disabled={portalLoading}>
@@ -116,13 +136,17 @@ export default function Pricing() {
               </div>
             ) : (
               <button className={styles.btnPro} onClick={handleUpgrade} disabled={loading}>
-                {loading ? 'Redirecting...' : 'Upgrade to Premium'}
+                {loading ? 'Redirecting to checkout...' : 'Upgrade to Premium'}
               </button>
             )}
           </div>
         </div>
 
-        <p className={styles.note}>No credit card required for the free plan. Cancel Premium anytime. Payments secured by Stripe.</p>
+        <p className={styles.note}>
+          {isLoggedIn
+            ? 'Payments are secured by Stripe. Cancel anytime from your billing portal.'
+            : 'No credit card required for the free plan. Cancel Premium anytime. Payments secured by Stripe.'}
+        </p>
       </main>
     </>
   )
