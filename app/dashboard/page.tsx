@@ -453,7 +453,10 @@ export default function Dashboard() {
                   {week.checkpoint && (
                     <div className={styles.checkpoint}>
                       <div className={styles.checkpointTitle}>✅ Week checkpoint</div>
-                      <p>{week.checkpoint}</p>
+                      <p>{typeof week.checkpoint === 'string' ? week.checkpoint : week.checkpoint.question}</p>
+                      {typeof week.checkpoint !== 'string' && week.checkpoint.criteria?.map((c: string, i: number) => (
+                        <p key={i} style={{fontSize:'12px', color:'#166534', marginTop:'4px'}}>• {c}</p>
+                      ))}
                     </div>
                   )}
 
